@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FileBox - File Storage & Sharing</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <nav class="topbar">
+    <span class="logo">FileBox</span>
+    <div id="user-area" class="hidden">
+      <span id="display-username"></span>
+      <button class="btn btn-red" onclick="logoutUser()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="main-wrapper">
+    <!-- Login & Registration Form -->
+    <div id="login-card" class="box auth-box">
+      <h2>Welcome to FileBox</h2>
+      <p class="hint">Sign in or create an account to store and share files.</p>
+      <input type="text" id="user-field" placeholder="Username" />
+      <input type="password" id="pass-field" placeholder="Password" />
+      <div class="row-buttons">
+        <button class="btn btn-blue" onclick="submitAuth('login')">Login</button>
+        <button class="btn btn-gray" onclick="submitAuth('register')">Register</button>
+      </div>
+      <p id="msg-box" class="message"></p>
+    </div>
+
+    <!-- User File Dashboard -->
+    <div id="app-card" class="hidden">
+      <div class="box upload-section">
+        <div>
+          <h3>Upload a File</h3>
+          <p class="hint">Maximum allowed size: 50 MB</p>
+        </div>
+        <div class="row-buttons">
+          <input type="file" id="file-input" />
+          <button class="btn btn-blue" onclick="uploadSelectedFile()">Upload</button>
+        </div>
+      </div>
+
+      <div class="box">
+        <h3>My Uploaded Files</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Size</th>
+              <th>Upload Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
