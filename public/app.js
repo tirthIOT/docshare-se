@@ -1,7 +1,36 @@
 let userToken = localStorage.getItem('filebox_token');
+let currentAuthMode = 'login';
 
 if (userToken) {
   openDashboard();
+}
+
+// Switch between Login and Register tabs
+function switchAuthMode(mode) {
+  currentAuthMode = mode;
+  document.getElementById('msg-box').innerText = '';
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  document.getElementById('auth-submit-btn').innerText =
+    mode === 'login' ? 'Sign In to Vault' : 'Create Free Account';
+}
+
+// Show / Hide password text
+function togglePassword() {
+  const passInput = document.getElementById('pass-field');
+  const toggleBtn = document.querySelector('.toggle-pass');
+  if (passInput.type === 'password') {
+    passInput.type = 'text';
+    toggleBtn.innerText = 'Hide';
+  } else {
+    passInput.type = 'password';
+    toggleBtn.innerText = 'Show';
+  }
+}
+
+function handleFormSubmit(event) {
+  event.preventDefault();
+  submitAuth(currentAuthMode);
 }
 
 async function submitAuth(action) {
@@ -17,14 +46,15 @@ async function submitAuth(action) {
 
   const data = await res.json();
   if (!res.ok) {
-    msgBox.style.color = '#c0392b';
+    msgBox.style.color = '#dc2626';
     msgBox.innerText = data.error;
     return;
   }
 
   if (action === 'register') {
-    msgBox.style.color = '#27ae60';
-    msgBox.innerText = 'Registered successfully! Now click Login.';
+    switchAuthMode('login');
+    msgBox.style.color = '#059669';
+    msgBox.innerText = 'Account created! Please sign in now.';
     return;
   }
 
@@ -38,7 +68,8 @@ function openDashboard() {
   document.getElementById('login-card').classList.add('hidden');
   document.getElementById('app-card').classList.remove('hidden');
   document.getElementById('user-area').classList.remove('hidden');
-  document.getElementById('display-username').innerText = 'User: ' + localStorage.getItem('filebox_username') + ' ';
+  document.getElementById('display-username').innerText = '@' + localStorage.getItem('filebox_username');
+  setupDragAndDrop();
   loadUserFiles();
 }
 
@@ -48,10 +79,45 @@ function logoutUser() {
   location.reload();
 }
 
+// Drag & Drop handlers
+function setupDragAndDrop() {
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      updateSelectedFileName();
+    }
+  });
+}
+
+function updateSelectedFileName() {
+  const input = document.getElementById('file-input');
+  const label = document.getElementById('selected-file-name');
+  if (input.files.length) {
+    const sizeMB = (input.files[0].size / (1024 * 1024)).toFixed(2);
+    label.innerText = `Selected: ${input.files[0].name} (${sizeMB} MB)`;
+    label.style.color = '#2563eb';
+    label.style.fontWeight = '600';
+  }
+}
+
 async function uploadSelectedFile() {
   const input = document.getElementById('file-input');
   if (!input.files.length) {
-    alert('Please select a file first.');
+    alert('Please select or drop a file first.');
     return;
   }
 
@@ -66,6 +132,10 @@ async function uploadSelectedFile() {
 
   if (res.ok) {
     input.value = '';
+    const label = document.getElementById('selected-file-name');
+    label.innerText = 'Supports PDF, Docs, Images, Archives (Max 50 MB)';
+    label.style.color = '#64748b';
+    label.style.fontWeight = 'normal';
     loadUserFiles();
   } else {
     const errData = await res.json();
@@ -79,24 +149,27 @@ async function loadUserFiles() {
   });
   const files = await res.json();
   const tbody = document.getElementById('table-body');
+  document.getElementById('file-count').innerText = files.length + (files.length === 1 ? ' file' : ' files');
 
   if (files.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4">No files uploaded yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b; padding:24px;">Your vault is empty. Upload your first file above!</td></tr>';
     return;
   }
 
   tbody.innerHTML = files.map(function (file) {
     const sizeKB = (file.file_size / 1024).toFixed(1);
     const dateStr = new Date(file.created_at).toLocaleDateString();
+    const ext = file.file_name.includes('.') ? file.file_name.split('.').pop().toUpperCase() : 'FILE';
     return `
       <tr>
-        <td>${file.file_name}</td>
+        <td><strong>${file.file_name}</strong></td>
+        <td><span class="ext-badge">${ext}</span></td>
         <td>${sizeKB} KB</td>
         <td>${dateStr}</td>
         <td class="actions-group">
-          <button class="btn btn-blue" onclick="downloadPrivateFile(${file.id}, '${file.file_name}')">Download</button>
-          <button class="btn btn-green" onclick="createShareLink(${file.id})">Share (24h)</button>
-          <button class="btn btn-red" onclick="removeFile(${file.id})">Delete</button>
+          <button class="btn btn-sm btn-download" onclick="downloadPrivateFile(${file.id}, '${file.file_name}')">Download</button>
+          <button class="btn btn-sm btn-share" onclick="createShareLink(${file.id})">Share (24h)</button>
+          <button class="btn btn-sm btn-delete" onclick="removeFile(${file.id})">Delete</button>
         </td>
       </tr>
     `;
