@@ -181,5 +181,5 @@ app.delete('/api/files/:id', checkAuth, (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('FileBox server started on http://localhost:' + PORT);
+  console.log('File sharing and storage cloud server started on http://localhost:' + PORT);
 });
